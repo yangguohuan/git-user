@@ -1,0 +1,16 @@
+安装git,
+
+使用 git --version 查看 git 版本
+
+git config --global user.name "eric"
+git config --global user.email "eric@example.com" 伪造一个邮箱。
+
+配置让git忽略掉的文件，比如本地数据文件。
+
+提交项目，git init
+git add .
+git commit -am "Ready for deployment to Platform.sh." 
+git status
+
+platform login
+platform create
