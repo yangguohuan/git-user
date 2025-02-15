@@ -1,3 +1,8 @@
+
+先下载安装xampp，自动配置大多数开发过程中需要的环境变量
+curl -fsS https://platform.sh/cli/installer | php  获得 platform.sh CLI，为后续推送做铺垫
+pip install platformshconfig 来为修改运⾏在服务器上的项⽬的设置
+
 安装git,
 
 使用 git --version 查看 git 版本
@@ -11,6 +16,8 @@ git config --global user.email "eric@example.com" 伪造一个邮箱。
 git add .
 git commit -am "Ready for deployment to Platform.sh." 
 git status
+
+
 
 platform login
 platform create
