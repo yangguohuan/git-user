@@ -1,0 +1,44 @@
+服务器外部IP：175.178.243.101
+
+1. 申请证书并解析域名
+2. 设置防火墙规则
+3. 更新系统并安装Nginx
+4. 启动Nginx
+5. 重启Nginx
+
+
+
+没有证书使用以下方法：
+
+打开nginx.conf文件，添加以下代码（如果没有安全证书，用下面的命令即可）
+在开头http {} 位置输入以下代码：
+
+server {
+	listen 80；
+	server_name 本机服务器IP或域名; #如果是域名，需要解析之后才能用
+	location / {
+		proxy_pass http://反向代理ip或域名:端口；#如果是80端口可以不用填，如果是域名需要解析之后才能用
+	}
+}
+
+
+
+有证书使用以下方法：
+
+打开nginx.conf文件，添加以下代码，添加即可，不用删除其他任何代码
+
+server {
+	listen 433 ssl;
+	server_name (已解析的证书域名);
+	ssl_certificate (证书文件路径);
+	ssl_certificate_key (密钥文件路径);
+	ssl_session_timeout 5m; #缓存有效期
+	ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4
+	ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+	ssl_prefer_server_ciphers on;
+	location / {
+		root html;
+		index index.html index.htm;
+		proxy_pass (需要反向代理的网址);
+	}
+}
