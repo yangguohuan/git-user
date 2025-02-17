@@ -1,0 +1,141 @@
+gunicorn --bind 0.0.0.0:8000 ll_project.wsgi:application
+/opt/myproject/gunicorn.sock
+
+ssh root@175.178.243.101
+
+
+#### 出现类似 myproject 或者 yourproject 均为需要修改的字段，为了代码连续性所写 #######
+
+使用git进行版本控制 ：
+git config --global user.name "username"  # 设置用户名
+git config -- global user.email "username@example.com"  # 设置邮箱，因为github会跟踪上传者
+git config --global init.defaultBranch main #在你使⽤Git管理的每个新项⽬中，⼀开始都只有⼀个分⽀，该分⽀名为main
+
+在项目目录下配置忽略文件 ： .gitignore   （这个⽂件名以句点打头，且没有扩展名）打开后编辑 加入该目录下不需要上传的文件或目录
+
+首先上传文件至github ：
+先到github上新建一个仓库，然后运行如下命令：
+echo "# pizzeria_project" >> README.md
+git init
+git add . 
+git commit -am "first commit"#创建项目快照   first commit需要修改  标志-a让Git 将仓库中所有修改了的⽂件都加⼊当前提交
+git branch -m main
+git remote add origin https://github.com/yangguohuan/pizzeria_project.git
+git push -u origin main
+
+
+git status # 检查项目状态
+git log  # 查看提交历史，加上  --pretty=oneline 显示简单信息
+git restore . # 不做修改 
+git checkout  #  检出以前的提交，会离开main
+git switch -   # 回到main
+
+
+git restore filename 让你能够放弃最后⼀次提交后对指定⽂件做的所有修改
+
+
+
+python3 -m venv venv  #所有操作都需要在虚拟的环境下
+
+git clone https://github.com/yangguohuan/learning_log.git #learning_log需要修改成上传至github仓库的仓库名称
+
+cd yourproject
+
+pip install gunicorn   #安装 gunicorn
+
+创建 Gunicorn 服务文件
+新建文件 /etc/systemd/system/gunicorn.service：
+[Unit]
+Description=gunicorn daemon
+After=network.target
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/opt/myproject/yourproject
+ExecStart=/opt/myproject/venv/bin/gunicorn \
+    --access-logfile - \
+    --workers 3 \
+    --bind unix:/opt/myproject/gunicorn.sock \
+    yourproject.wsgi:application
+[Install]
+WantedBy=multi-user.target
+
+
+sudo systemctl daemon-reload
+
+sudo systemctl start gunicorn
+
+sudo systemctl enable gunicorn
+
+sudo apt install -y nginx
+
+
+创建 Nginx 配置文件
+/etc/nginx/sites-available/myproject：
+server {
+    listen 80;
+    server_name yourdomain.com 服务器IP;
+    location /static/ {
+        alias /opt/myproject/static/;
+    }
+    location / {
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://unix:/opt/myproject/gunicorn.sock;
+    }
+}
+
+
+启用配置并重启 Nginx
+sudo ln -s /etc/nginx/sites-available/myproject /etc/nginx/sites-enabled/
+
+sudo nginx -t          # 测试配置语法
+
+sudo systemctl restart nginx
+
+
+# 防火墙放行端口，这里设置了80和22
+sudo ufw allow 80/tcp   # HTTP
+
+sudo ufw allow 22/tcp   # SSH
+
+sudo ufw enable
+
+
+配置HTTPS：
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d yourdomain.com
+
+sudo journalctl -u gunicorn   # Gunicorn 日志
+sudo tail -f /var/log/nginx/error.log  # Nginx 错误日志
+
+
+# 在项目目录中执行
+gunicorn --bind 0.0.0.0:8000 yourapplication.wsgi:application  #yourapplication要修改成wsgi所在目录名，一般为启动项目的项目名称
+
+# 重新收集静态文件
+python manage.py collectstatic
+
+
+django 项目运行前先要开启虚拟机 source venv/bin/activate
+python manage.py runserver
+
+
+sudo netstat -tuln | grep 8000   #检查端口8000被占用情况
+sudo lsof -i :8000   # 查看占用端口的进程
+sudo kill -9 <PID>  #结束占用该端口的进程
+
+
+配置settings.py  
+语言 ：zh-hans
+时区：Asia/Shanghai
+
+BASE_DIR 返回项目的绝对路径，DEBUG 默认True开发调试模式，False 生产模式，MIDDLEWARE 注册中间件
+可以自定义配置，但是尽量个性化以免改掉公有配置，配置名全大写 比如： YANGLS
+
+
+
+
+
