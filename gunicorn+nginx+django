@@ -1,0 +1,95 @@
+#安装依赖
+sudo apt update
+sudo apt install python3 python3-pip python3-venv nginx
+
+
+#创建虚拟环境
+cd /path/to/your/project
+python3 -m venv venv
+source venv/bin/activate
+pip install django gunicorn
+
+
+##配置settings.py
+# 关闭调试模式
+DEBUG = False
+
+
+# 允许访问的域名/IP（替换为你的域名或服务器IP）
+ALLOWED_HOSTS = ["your-domain.com", "服务器IP"]
+
+
+# 静态文件配置
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # 收集静态文件到此目录
+
+
+# 数据库配置（推荐使用PostgreSQL/MySQL替代SQLite）
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
+
+
+#收集静态文件
+python manage.py collectstatic
+
+
+#测试
+gunicorn --workers 3 --bind 0.0.0.0:8000 shopping.wsgi:application
+
+
+#创建服务文件 
+vim /etc/systemd/system/gunicorn.service
+
+[Unit]
+Description=Gunicorn Django Service
+After=network.target
+
+[Service]
+User=your_username  # 替换为实际用户（如ubuntu）
+Group=www-data
+WorkingDirectory=/path/to/your/project
+ExecStart=/path/to/your/project/venv/bin/gunicorn --workers 3 --bind unix:/tmp/gunicorn.sock your_project.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+sudo systemctl daemon-reload
+sudo systemctl start gunicorn
+sudo systemctl enable gunicorn  # 开机自启
+
+
+#创建配置文件
+vim /etc/nginx/sites-available/shopping
+
+server {
+    listen 80;
+    server_name your-domain.com 服务器IP;  # 替换为实际域名/IP
+
+    # 静态文件处理
+    location /static/ {
+        alias /path/to/your/project/staticfiles/;
+    }
+
+    # 动态请求转发
+    location / {
+        proxy_pass http://unix:/tmp/gunicorn.sock;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+
+
+sudo ln -s /etc/nginx/sites-available/shopping /etc/nginx/sites-enabled/
+sudo nginx -t  
+sudo systemctl restart nginx
+
+
+
