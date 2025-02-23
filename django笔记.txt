@@ -1,3 +1,29 @@
+from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.db import models
+
+class UserProfile(AbstractUser):
+    # 添加你的自定义字段
+    phone = models.CharField(max_length=20, blank=True)
+    
+    # 重写 groups 和 user_permissions 字段，指定 related_name
+    groups = models.ManyToManyField(
+        Group,
+        verbose_name='groups',
+        blank=True,
+        help_text='The groups this user belongs to.',
+        related_name="userprofile_groups",  # 自定义反向名称
+        related_query_name="userprofile",
+    )
+    user_permissions = models.ManyToManyField(
+        Permission,
+        verbose_name='user permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_name="userprofile_permissions",  # 自定义反向名称
+        related_query_name="userprofile",
+    )
+
+
 在项目同名文件夹下新建 views.py
 
 1.  views.py先导入 from django.http import HttpResponse
